@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/white">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnDialogPause"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/shape_count_player"
+            android:padding="10dp"
+            android:text="Pause"
+            android:textColor="@android:color/holo_blue_dark"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btnDialogResume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="45dp"
+
+            android:background="@drawable/shape_count_player"
+            android:padding="10dp"
+            android:text="Resume"
+            android:textColor="@android:color/holo_blue_dark"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/imgClose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:background="@android:color/holo_red_dark"
+        android:src="@android:drawable/ic_menu_close_clear_cancel" />
+</RelativeLayout>
