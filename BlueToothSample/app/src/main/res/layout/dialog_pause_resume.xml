@@ -34,6 +34,17 @@
             android:text="Resume"
             android:textColor="@android:color/holo_blue_dark"
             android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btnDialogQuit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="45dp"
+            android:background="@drawable/shape_count_player"
+            android:padding="10dp"
+            android:text="Quit"
+            android:textColor="@android:color/holo_blue_dark"
+            android:textSize="18sp" />
     </LinearLayout>
 
     <ImageView

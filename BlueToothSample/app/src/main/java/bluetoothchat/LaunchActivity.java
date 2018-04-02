@@ -423,6 +423,11 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                         Toast.makeText(LaunchActivity.this, "Joiner is ready", Toast.LENGTH_LONG).show();
                         return;
                     }
+                    if (readMessage.equalsIgnoreCase("pause")||readMessage.equalsIgnoreCase("resume")) {
+                        sendBroadcast(new Intent("PauseResume").putExtra("GameStatus",readMessage));
+                        Toast.makeText(LaunchActivity.this, "Message "+readMessage, Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     //check here
                     Gson gson = new Gson();
                     JsonReader reader = new JsonReader(new StringReader(readMessage.toString().trim()));
@@ -723,6 +728,9 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
         sendMessage("ready");
     }
 
+    public void sendOtherMessage(String msg) {
+        sendMessage(msg);
+    }
     @Override
     public void onBackPressed() {
 //        super.onBackPressed();

@@ -1,8 +1,10 @@
 package bluetoothchat;
 
-import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -13,7 +15,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,8 +35,35 @@ public class QuestionFragment extends Fragment {
     QuestionModel selectedQModel;
     CountDownTimer _t;
     int _count = 1;
-    private int duration;
+    private long duration;
     private TextView tvPauseResume;
+    public long milliLeft;
+
+    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String gameStatus = intent.getStringExtra("GameStatus");
+            if (gameStatus.equalsIgnoreCase("pause")) {
+                Toast.makeText(getActivity(), "game is  ->" + gameStatus, Toast.LENGTH_SHORT).show();
+                pauseTimer();
+            } else {
+                Toast.makeText(getActivity(), "game is  ->" + gameStatus, Toast.LENGTH_SHORT).show();
+                resumeTimer();
+            }
+        }
+    };
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        getActivity().registerReceiver(broadcastReceiver, new IntentFilter("PauseResume"));
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        getActivity().unregisterReceiver(broadcastReceiver);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
@@ -49,21 +77,23 @@ public class QuestionFragment extends Fragment {
         btnOp4 = (Button) view.findViewById(R.id.btnOp4);
         tvPauseResume = (TextView) view.findViewById(R.id.tvPauseResume);
 
-        if (!Utility.isHost) {
-            btnOp1.setOnClickListener(new optionClickListener());
-            btnOp4.setOnClickListener(new optionClickListener());
-            btnOp3.setOnClickListener(new optionClickListener());
-            btnOp2.setOnClickListener(new optionClickListener());
-        }
+
+        btnOp1.setOnClickListener(new optionClickListener());
+        btnOp4.setOnClickListener(new optionClickListener());
+        btnOp3.setOnClickListener(new optionClickListener());
+        btnOp2.setOnClickListener(new optionClickListener());
+
         tvPauseResume.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showPauseResumeDialog();
+                if (_t != null)
+                    showPauseResumeDialog();
             }
         });
         selectedQModel = (QuestionModel) getArguments().getSerializable("QData");
         setQData();
-        startTimer();
+        long duration = (getSelectedTimeDuration(selectedQModel.getDuration()) * 1000) + 1000;
+        startTimer(duration);
         return view;
     }
 
@@ -73,7 +103,7 @@ public class QuestionFragment extends Fragment {
         LayoutInflater inflater = getActivity().getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_pause_resume, null);
         dialogBuilder.setView(dialogView);
-        Button btnDialogPause = (Button) dialogView.findViewById(R.id.btnDialogPause);
+        final Button btnDialogPause = (Button) dialogView.findViewById(R.id.btnDialogPause);
         Button btnDialogResume = (Button) dialogView.findViewById(R.id.btnDialogResume);
         ImageView imgClose = (ImageView) dialogView.findViewById(R.id.imgClose);
         final AlertDialog alertDialog = dialogBuilder.create();
@@ -87,26 +117,47 @@ public class QuestionFragment extends Fragment {
         btnDialogPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                alertDialog.dismiss();
+
+                ((LaunchActivity) getActivity()).sendOtherMessage("pause");
+                btnDialogPause.setText("Paused");
+                pauseTimer();
                 Toast.makeText(getActivity(), "Paused", Toast.LENGTH_SHORT).show();
+
+
             }
         });
         btnDialogResume.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 alertDialog.dismiss();
+                ((LaunchActivity) getActivity()).sendOtherMessage("resume");
+                btnDialogPause.setText("Pause");
                 Toast.makeText(getActivity(), "Resumed", Toast.LENGTH_SHORT).show();
+                resumeTimer();
             }
         });
         alertDialog.show();
     }
 
-    private void startTimer() {
-        duration = getSelectedTimeDuration(selectedQModel.getDuration()); //6 hours
-        duration = (duration * 1000) + 1000;
+    private void pauseTimer() {
+        if (_t != null) {
+            _t.cancel();
+            _t = null;
+        }
+    }
+
+    private void resumeTimer() {
+        startTimer(milliLeft);
+    }
+
+    private void startTimer(long totalDuration) {
+        duration = totalDuration;  //6 hours
+
         _t = new CountDownTimer(duration, 1000) {
 
+
             public void onTick(long millisUntilFinished) {
+                milliLeft = millisUntilFinished;
                 long secondsInMilli = 1000;
                 long minutesInMilli = secondsInMilli * 60;
                 long hoursInMilli = minutesInMilli * 60;
@@ -153,7 +204,6 @@ public class QuestionFragment extends Fragment {
     }
 
     private void setQData() {
-
         tvQuestion.setText(selectedQModel.getQuestion());
         btnOp1.setText(selectedQModel.getOptionA());
         btnOp2.setText(selectedQModel.getOptionB());

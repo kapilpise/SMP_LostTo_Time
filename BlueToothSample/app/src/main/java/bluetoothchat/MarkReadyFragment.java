@@ -23,6 +23,7 @@ public class MarkReadyFragment extends Fragment {
     Button btnMarkReady;
     TextView tvName;
     ISendMarkReadyMessage iSendMarkReadyMessage;
+
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
@@ -35,8 +36,17 @@ public class MarkReadyFragment extends Fragment {
         btnMarkReady.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (btnMarkReady.getText().toString().equalsIgnoreCase("Leave Lobby")) {
+                    try {
+                        getActivity().onBackPressed();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return;
+                }
                 Utility.MarkReady = true;
-                Toast.makeText(getActivity(),"Marked Ready",Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), "Marked Ready", Toast.LENGTH_LONG).show();
+                btnMarkReady.setText("Leave Lobby");
                 iSendMarkReadyMessage.sendReadyMessage();
             }
         });
@@ -44,7 +54,7 @@ public class MarkReadyFragment extends Fragment {
         return view;
     }
 
-    interface ISendMarkReadyMessage{
+    interface ISendMarkReadyMessage {
         void sendReadyMessage();
     }
 }
