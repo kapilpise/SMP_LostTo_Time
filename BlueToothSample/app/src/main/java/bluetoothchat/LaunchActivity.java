@@ -417,6 +417,7 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                 case Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
+                    //receive msg
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     if (readMessage.equalsIgnoreCase("ready")) {
                         Utility.isJoinReady = true;
@@ -426,6 +427,10 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                     if (readMessage.equalsIgnoreCase("pause")||readMessage.equalsIgnoreCase("resume")) {
                         sendBroadcast(new Intent("PauseResume").putExtra("GameStatus",readMessage));
                         Toast.makeText(LaunchActivity.this, "Message "+readMessage, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (readMessage.equalsIgnoreCase("LossGame")) {
+                        sendBroadcast(new Intent("LossGame"));
                         return;
                     }
                     //check here
@@ -460,6 +465,7 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                     } else {
                         setJoinName(mConnectedDeviceName);
                     }
+
 
 
                     break;
@@ -736,12 +742,17 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
 //        super.onBackPressed();
         android.support.v4.app.FragmentManager fm = getSupportFragmentManager(); // or 'getSupportFragmentManager();'
         int count = fm.getBackStackEntryCount();
-        for (int i = 0; i < count; ++i) {
-            fm.popBackStack();
-            if (i == 0) {
-                llStartGame.setVisibility(View.VISIBLE);
-                btnSettings.setVisibility(View.VISIBLE);
+        try {
+            for (int i = 0; i < count; ++i) {
+                fm.popBackStack();
+                if (i == 0) {
+                    llStartGame.setVisibility(View.VISIBLE);
+                    btnSettings.setVisibility(View.VISIBLE);
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            super.onBackPressed();
         }
         if (count == 0)
             super.onBackPressed();

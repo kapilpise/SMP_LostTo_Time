@@ -38,18 +38,25 @@ public class QuestionFragment extends Fragment {
     private long duration;
     private TextView tvPauseResume;
     public long milliLeft;
+    boolean isGamePaused;
 
     BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String gameStatus = intent.getStringExtra("GameStatus");
             if (gameStatus.equalsIgnoreCase("pause")) {
-                Toast.makeText(getActivity(), "game is  ->" + gameStatus, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "" + gameStatus, Toast.LENGTH_SHORT).show();
                 pauseTimer();
             } else {
-                Toast.makeText(getActivity(), "game is  ->" + gameStatus, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "" + gameStatus, Toast.LENGTH_SHORT).show();
                 resumeTimer();
             }
+        }
+    };
+    BroadcastReceiver brLossGame = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            showAlert("You loss the game", 4);
         }
     };
 
@@ -57,12 +64,14 @@ public class QuestionFragment extends Fragment {
     public void onStart() {
         super.onStart();
         getActivity().registerReceiver(broadcastReceiver, new IntentFilter("PauseResume"));
+        getActivity().registerReceiver(brLossGame, new IntentFilter("LossGame"));
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         getActivity().unregisterReceiver(broadcastReceiver);
+        getActivity().unregisterReceiver(brLossGame);
     }
 
     @Override
@@ -143,10 +152,12 @@ public class QuestionFragment extends Fragment {
         if (_t != null) {
             _t.cancel();
             _t = null;
+            isGamePaused = true;
         }
     }
 
     private void resumeTimer() {
+        isGamePaused = false;
         startTimer(milliLeft);
     }
 
@@ -178,9 +189,9 @@ public class QuestionFragment extends Fragment {
 
                 tvTimer.setText("00:00");
                 if (!Utility.isHost)
-                    showAlert("Your time is up, try again later", false);
+                    showAlert("Your time is up, try again later", 0);
                 else
-                    showAlert("Time up of participant", false);
+                    showAlert("Time up of participant", 0);
             }
         }.start();
     }
@@ -200,7 +211,8 @@ public class QuestionFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        _t.cancel();
+        if (_t != null)
+            _t.cancel();
     }
 
     private void setQData() {
@@ -220,16 +232,21 @@ public class QuestionFragment extends Fragment {
         @Override
         public void onClick(View view) {
             if (view != null) {
+                if (isGamePaused) {
+                    showAlert("Cannot play when game is pause mode", 2);
+                    return;
+                }
                 String s = ((Button) view).getText().toString();
                 if (selectedQModel.getCorrectAns().equalsIgnoreCase(s)) {
-                    showAlert("You are winner!!", true);
+                    showAlert("You are winner!!", 1);
+                    ((LaunchActivity) getActivity()).sendOtherMessage("LossGame");
                 } else
-                    showAlert("Your answer is wrong!!", false);
+                    showAlert("Your answer is wrong!!", 0);
             }
         }
     }
 
-    private void showAlert(String message, final boolean b) {
+    private void showAlert(String message, final int b) {
         AlertDialog.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder = new AlertDialog.Builder(getActivity(), android.R.style.Theme_Material_Dialog_Alert);
@@ -241,8 +258,15 @@ public class QuestionFragment extends Fragment {
                 .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
+                        if (b == 2) {
+                            return;
+                        }
+                        if (b == 4) {
+                            ((getActivity()).getSupportFragmentManager()).popBackStack();
+                            return;
+                        }
                         try {
-                            if (b) {
+                            if (b == 1) {
                                 ((getActivity()).getSupportFragmentManager()).popBackStack();
                             } else
                                 getActivity().sendBroadcast(new Intent("FinishAll"));
