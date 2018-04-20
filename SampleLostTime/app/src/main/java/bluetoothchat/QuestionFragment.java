@@ -53,6 +53,28 @@ public class QuestionFragment extends Fragment {
             }
         }
     };
+    BroadcastReceiver broadcastReceiverQuit = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (_t != null)
+                _t.cancel();
+            startActivity(new Intent(getActivity(), LaunchActivity.class));
+            getActivity().finish();
+        }
+    };
+
+    BroadcastReceiver broadcastReceiverNextQuestion = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            selectedQModel.setQuestion("Next session question " + selectedQModel.getQuestion());
+            setQData();
+            long duration = (60 * 1000) + 1000;
+            startTimer(duration);
+            if (alertDialog != null) {
+                alertDialog.dismiss();
+            }
+        }
+    };
     BroadcastReceiver brLossGame = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -64,6 +86,8 @@ public class QuestionFragment extends Fragment {
     public void onStart() {
         super.onStart();
         getActivity().registerReceiver(broadcastReceiver, new IntentFilter("PauseResume"));
+        getActivity().registerReceiver(broadcastReceiverQuit, new IntentFilter("Quit"));
+        getActivity().registerReceiver(broadcastReceiverNextQuestion, new IntentFilter("NextQuestion"));
         getActivity().registerReceiver(brLossGame, new IntentFilter("LossGame"));
     }
 
@@ -71,6 +95,8 @@ public class QuestionFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         getActivity().unregisterReceiver(broadcastReceiver);
+        getActivity().unregisterReceiver(broadcastReceiverQuit);
+        getActivity().unregisterReceiver(broadcastReceiverNextQuestion);
         getActivity().unregisterReceiver(brLossGame);
     }
 
@@ -113,13 +139,14 @@ public class QuestionFragment extends Fragment {
         View dialogView = inflater.inflate(R.layout.dialog_pause_resume, null);
         dialogBuilder.setView(dialogView);
         final Button btnDialogPause = (Button) dialogView.findViewById(R.id.btnDialogPause);
+        final Button btnDialogQuit = (Button) dialogView.findViewById(R.id.btnDialogQuit);
         Button btnDialogResume = (Button) dialogView.findViewById(R.id.btnDialogResume);
         ImageView imgClose = (ImageView) dialogView.findViewById(R.id.imgClose);
-        final AlertDialog alertDialog = dialogBuilder.create();
+        final AlertDialog alertDialoga = dialogBuilder.create();
         imgClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                alertDialog.dismiss();
+                alertDialoga.dismiss();
             }
         });
 
@@ -138,14 +165,21 @@ public class QuestionFragment extends Fragment {
         btnDialogResume.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                alertDialog.dismiss();
+                alertDialoga.dismiss();
                 ((LaunchActivity) getActivity()).sendOtherMessage("resume");
                 btnDialogPause.setText("Pause");
                 Toast.makeText(getActivity(), "Resumed", Toast.LENGTH_SHORT).show();
                 resumeTimer();
             }
         });
-        alertDialog.show();
+        btnDialogQuit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                alertDialoga.dismiss();
+                ((LaunchActivity) getActivity()).sendOtherMessage("quit");
+            }
+        });
+        alertDialoga.show();
     }
 
     private void pauseTimer() {
@@ -247,6 +281,13 @@ public class QuestionFragment extends Fragment {
     }
 
     private void showAlert(String message, final int b) {
+        try {
+            if (_t != null) {
+                _t.cancel();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         AlertDialog.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder = new AlertDialog.Builder(getActivity(), android.R.style.Theme_Material_Dialog_Alert);
@@ -267,13 +308,53 @@ public class QuestionFragment extends Fragment {
                         }
                         try {
                             if (b == 1) {
-                                ((getActivity()).getSupportFragmentManager()).popBackStack();
+//                                ((getActivity()).getSupportFragmentManager()).popBackStack();
+                                showNextSessionAlert();
                             } else
                                 getActivity().sendBroadcast(new Intent("FinishAll"));
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
-                }).show();
+                });
+        alertDialog = null;
+        alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+    AlertDialog alertDialog;
+
+    private void showNextSessionAlert() {
+        AlertDialog.Builder builder;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder = new AlertDialog.Builder(getActivity(), android.R.style.Theme_Material_Dialog_Alert);
+        } else {
+            builder = new AlertDialog.Builder(getActivity());
+        }
+        builder.setCancelable(false);
+        builder.setMessage("Do you want to move to next session")
+                .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        //refresh question fragment
+                        ((LaunchActivity) getActivity()).sendOtherMessage("nextQuestion");
+                        selectedQModel.setQuestion("Next session question " + selectedQModel.getQuestion());
+                        setQData();
+                        long duration = (60 * 1000) + 1000;
+                        startTimer(duration);
+                    }
+                })
+                .setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int i) {
+                        dialog.dismiss();
+                        ((getActivity()).getSupportFragmentManager()).popBackStack();
+                    }
+                });
+        alertDialog = null;
+        alertDialog = builder.create();
+        alertDialog.show();
+
     }
 }

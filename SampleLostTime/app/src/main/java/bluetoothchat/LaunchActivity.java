@@ -2,8 +2,6 @@ package bluetoothchat;
 
 import android.app.ActionBar;
 import android.app.Activity;
-import android.app.FragmentManager;
-import android.app.LauncherActivity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -14,7 +12,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.IdRes;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
@@ -30,7 +27,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,13 +36,9 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import common.model.QuestionModel;
 import common.model.Utility;
-
-import static bluetoothchat.DeviceListActivity.EXTRA_DEVICE_POSITION;
 
 /**
  * Created by Kapil on 02-03-2018.
@@ -421,6 +413,16 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                     // construct a string from the valid bytes in the buffer
                     //receive msg
                     String readMessage = new String(readBuf, 0, msg.arg1);
+                    if (readMessage.equalsIgnoreCase("quit")) {
+                        sendBroadcast(new Intent("Quit"));
+                        Toast.makeText(LaunchActivity.this, "Quit", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    if (readMessage.equalsIgnoreCase("nextQuestion")) {
+                        sendBroadcast(new Intent("NextQuestion"));
+                        Toast.makeText(LaunchActivity.this, "Next Question started", Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     if (readMessage.equalsIgnoreCase("ready")) {
                         Utility.isJoinReady = true;
                         Toast.makeText(LaunchActivity.this, "Joiner is ready", Toast.LENGTH_LONG).show();
@@ -507,13 +509,13 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
             case REQUEST_CONNECT_DEVICE_SECURE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    connectDevice(data, data.getIntExtra(DeviceListActivity.EXTRA_DEVICE_ADDRESS,0));
+                    connectDevice(data, 0);
                 }
                 break;
             case REQUEST_CONNECT_DEVICE_INSECURE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    connectDevice(data, data.getIntExtra(DeviceListActivity.EXTRA_DEVICE_ADDRESS,-1));
+                    connectDevice(data, 0);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -630,7 +632,6 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
             public void onClick(View view) {
                 if (editText.getText().toString().trim().length() > 0) {
                     progressDialog.setMessage("Setting Lobby");
-                    mBluetoothAdapter.startDiscovery();
                     mBluetoothAdapter.setName(editText.getText().toString());
                     progressDialog.show();
                     mBluetoothAdapter.disable();
@@ -642,6 +643,7 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            mBluetoothAdapter.setName(editText.getText().toString());
                             mBluetoothAdapter.enable();
                             Utility.lobbyName = editText.getText().toString().trim();
                             HostFragment hostFragment = new HostFragment();
@@ -652,7 +654,7 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                             changeFragment(hostFragment, HostFragment.class.getName());
 
                             Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-                            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+                            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 60);
                             startActivity(discoverableIntent);
                         }
                     });
@@ -754,10 +756,11 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
             }
         } catch (Exception e) {
             e.printStackTrace();
+            startActivity(new Intent(this, LaunchActivity.class));
+        }
+        if (count == 0) {
             super.onBackPressed();
         }
-        if (count == 0)
-            super.onBackPressed();
         Utility.isJoinReady = false;
         mChatService.stop();
     }

@@ -27,10 +27,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -40,9 +40,9 @@ import android.widget.TextView;
 import com.example.android.bluetoothchat.R;
 import com.example.android.common.logger.Log;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * This Activity appears as a dialog. It lists any paired devices and
@@ -54,7 +54,9 @@ public class DeviceListActivity extends Activity {
 
     /**
      * Tag for Log
+     *
      */
+    private ProgressDialog mPrgDialog = null;
     private static final String TAG = "DeviceListActivity";
     public static final String EXTRA_DEVICE_POSITION = "devPos";
 
@@ -77,11 +79,11 @@ public class DeviceListActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        mPrgDialog = new ProgressDialog(this);
         // Setup the window
 //        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.activity_device_list);
-
+        mPrgDialog.setMessage("Please wait..");
         // Set result CANCELED in case the user backs out
         setResult(Activity.RESULT_CANCELED);
 
@@ -101,7 +103,7 @@ public class DeviceListActivity extends Activity {
 
         // Initialize array adapters. One for already paired devices and
         // one for newly discovered devices
-        ArrayAdapter<String> pairedDevicesArrayAdapter =
+        final ArrayAdapter<String> pairedDevicesArrayAdapter =
                 new ArrayAdapter<String>(this, R.layout.device_name);
         mNewDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
 
@@ -127,50 +129,78 @@ public class DeviceListActivity extends Activity {
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
         // Get a set of currently paired devices
-        mBtAdapter.startDiscovery();
 
+        mPrgDialog.show();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBtAdapter.enable();
+                mBtAdapter.startDiscovery();
+            }
+        });
         try {
-            Thread.sleep(2500);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
-        Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-
-        // If there are paired devices, add each one to the ArrayAdapter
-        if (pairedDevices.size() > 0) {
-//            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
-            for (BluetoothDevice device : pairedDevices) {
-//                String bluetoothMacAddress;
-//                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M){
-//                    try {
-//                        Field mServiceField = mBtAdapter.getClass().getDeclaredField("mService");
-//                        mServiceField.setAccessible(true);
-//
-//                        Object btManagerService = mServiceField.get(mBtAdapter);
-//
-//                        if (btManagerService != null) {
-//                            bluetoothMacAddress = (String) btManagerService.getClass().getMethod("getName").invoke(btManagerService);
-//                        }
-//                    } catch (NoSuchFieldException e) {
-//
-//                    } catch (NoSuchMethodException e) {
-//
-//                    } catch (IllegalAccessException e) {
-//
-//                    } catch (InvocationTargetException e) {
-//
-//                    }
-//                } else {
-////                    bluetoothMacAddress = bluetoothAdapter.getAddress();
-//                }
-                pairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mBtAdapter.enable();
+                mBtAdapter.startDiscovery();
+                Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
+                pairedDevicesArrayAdapter.clear();
+                // If there are paired devices, add each one to the ArrayAdapter
+                if (pairedDevices.size() > 0) {
+                    for (BluetoothDevice device : pairedDevices) {
+                        pairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                    }
+                } else {
+                    String noDevices = getResources().getText(R.string.none_paired).toString();
+                    pairedDevicesArrayAdapter.add(noDevices);
+                }
+                mPrgDialog.dismiss();
             }
-        } else {
-            String noDevices = getResources().getText(R.string.none_paired).toString();
-            pairedDevicesArrayAdapter.add(noDevices);
-        }
+        }, 2500);
+
+
+        Timer mTimer = new Timer();
+        TimerTask mTimerTask = new TimerTask() {
+
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        if (mBtAdapter.isDiscovering()) {
+                            mBtAdapter.cancelDiscovery();
+                            //After cancel discovery, start discovery instead of wait another 10 seconds to re-execute this piece of code
+                            Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
+                            pairedDevicesArrayAdapter.clear();
+                            // If there are paired devices, add each one to the ArrayAdapter
+                            if (pairedDevices.size() > 0) {
+                                for (BluetoothDevice device : pairedDevices) {
+                                    pairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                                }
+                            } else {
+                                String noDevices = getResources().getText(R.string.none_paired).toString();
+                                pairedDevicesArrayAdapter.add(noDevices);
+                            }
+                            mBtAdapter.startDiscovery();
+                        } else {
+                            mBtAdapter.startDiscovery();
+                        }
+                    }
+
+                });
+                //Timer delays 0 seconds (it will start immediately)
+                //Timer repeats every 10 seconds, as you said
+                //10000ms equals to 10s
+            }
+
+        };
+        mTimer.schedule(mTimerTask, 0, 5000);
     }
 
     @Override
