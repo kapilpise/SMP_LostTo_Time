@@ -56,6 +56,7 @@ public class DeviceListActivity extends Activity {
      * Tag for Log
      */
     private static final String TAG = "DeviceListActivity";
+    public static final String EXTRA_DEVICE_POSITION = "devPos";
 
     /**
      * Return Intent extra
@@ -212,7 +213,7 @@ public class DeviceListActivity extends Activity {
      */
     private AdapterView.OnItemClickListener mDeviceClickListener
             = new AdapterView.OnItemClickListener() {
-        public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
+        public void onItemClick(AdapterView<?> av, View v, int pos, long arg3) {
             // Cancel discovery because it's costly and we're about to connect
             mBtAdapter.cancelDiscovery();
 
@@ -223,6 +224,7 @@ public class DeviceListActivity extends Activity {
             // Create the result Intent and include the MAC address
             Intent intent = new Intent();
             intent.putExtra(EXTRA_DEVICE_ADDRESS, address);
+            intent.putExtra(EXTRA_DEVICE_POSITION, pos);
 
             // Set result and finish this Activity
             setResult(Activity.RESULT_OK, intent);

@@ -46,6 +46,8 @@ import java.lang.reflect.Method;
 import common.model.QuestionModel;
 import common.model.Utility;
 
+import static bluetoothchat.DeviceListActivity.EXTRA_DEVICE_POSITION;
+
 /**
  * Created by Kapil on 02-03-2018.
  */
@@ -505,13 +507,13 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
             case REQUEST_CONNECT_DEVICE_SECURE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    connectDevice(data, true);
+                    connectDevice(data, data.getIntExtra(DeviceListActivity.EXTRA_DEVICE_ADDRESS,0));
                 }
                 break;
             case REQUEST_CONNECT_DEVICE_INSECURE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    connectDevice(data, false);
+                    connectDevice(data, data.getIntExtra(DeviceListActivity.EXTRA_DEVICE_ADDRESS,-1));
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -535,27 +537,27 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
      * @param data   An {@link Intent} with {@link DeviceListActivity#EXTRA_DEVICE_ADDRESS} extra.
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
-    private void connectDevice(Intent data, boolean secure) {
+    private void connectDevice(Intent data, int secure) {
         // Get the device MAC address
         String address = data.getExtras()
                 .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        String deviceAlias = device.getName();
-        try {
-            Method method = device.getClass().getMethod("getAliasName");
-            if (method != null) {
-                deviceAlias = (String) method.invoke(device);
-            }
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
+//        String deviceAlias = device.getName();
+//        try {
+//            Method method = device.getClass().getMethod("getAliasName");
+//            if (method != null) {
+//                deviceAlias = (String) method.invoke(device);
+//            }
+//        } catch (NoSuchMethodException e) {
+//            e.printStackTrace();
+//        } catch (InvocationTargetException e) {
+//            e.printStackTrace();
+//        } catch (IllegalAccessException e) {
+//            e.printStackTrace();
+//        }
         // Attempt to connect to the device
-        mChatService.connect(device, secure);
+        mChatService.connect(device, true);
     }
 
     @Override
