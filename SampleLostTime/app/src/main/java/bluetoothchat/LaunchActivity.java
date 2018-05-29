@@ -1,5 +1,6 @@
 package bluetoothchat;
 
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -103,6 +104,12 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
             onBackPressed();
         }
     };
+    BroadcastReceiver brKickUser = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            onBackPressed();
+        }
+    };
     private Button btnSettings;
 
     @Override
@@ -160,6 +167,7 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
         // If BT is not on, request that it be enabled.
         // setupChat() will then be called during onActivityResult
         registerReceiver(broadcastReceiver, new IntentFilter("FinishAll"));
+        registerReceiver(brKickUser, new IntentFilter("kickUser"));
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
@@ -378,6 +386,7 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
     /**
      * The Handler that gets information back from the BluetoothChatService
      */
+    @SuppressLint("HandlerLeak")
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -435,6 +444,10 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                     }
                     if (readMessage.equalsIgnoreCase("LossGame")) {
                         sendBroadcast(new Intent("LossGame"));
+                        return;
+                    }
+                    if (readMessage.equalsIgnoreCase("kickUser")) {
+                        sendBroadcast(new Intent("kickUser"));
                         return;
                     }
                     //check here
@@ -630,11 +643,11 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
         btnDialogHost.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (editText.getText().toString().trim().length() > 0) {
-                    progressDialog.setMessage("Setting Lobby");
-                    mBluetoothAdapter.setName(editText.getText().toString());
+//                if (editText.getText().toString().trim().length() > 0) {
+//                    progressDialog.setMessage("Setting Lobby");
+//                    mBluetoothAdapter.setName(editText.getText().toString());
                     progressDialog.show();
-                    mBluetoothAdapter.disable();
+//                    mBluetoothAdapter.disable();
                     try {
                         Thread.sleep(1500);
                     } catch (InterruptedException e) {
@@ -643,12 +656,12 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            mBluetoothAdapter.setName(editText.getText().toString());
-                            mBluetoothAdapter.enable();
-                            Utility.lobbyName = editText.getText().toString().trim();
+//                            mBluetoothAdapter.setName(editText.getText().toString());
+//                            mBluetoothAdapter.enable();
+                            Utility.lobbyName = mBluetoothAdapter.getName().toString();
                             HostFragment hostFragment = new HostFragment();
                             Bundle bundle = new Bundle();
-                            bundle.putString("Name", mBluetoothAdapter.getName());
+                            bundle.putString("Name", mBluetoothAdapter.getName().toString());
                             hostFragment.setArguments(bundle);
                             alertDialog.dismiss();
                             changeFragment(hostFragment, HostFragment.class.getName());
@@ -658,9 +671,9 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
                             startActivity(discoverableIntent);
                         }
                     });
-                } else {
-                    Toast.makeText(LaunchActivity.this, "Lobby Name is needed", Toast.LENGTH_LONG).show();
-                }
+//                } else {
+//                    Toast.makeText(LaunchActivity.this, "Lobby Name is needed", Toast.LENGTH_LONG).show();
+//                }
 
                 progressDialog.dismiss();
             }
@@ -731,6 +744,11 @@ public class LaunchActivity extends FragmentActivity implements OptionFragment.I
         bundle.putSerializable("QData", crntQuestion);
         questionFragment.setArguments(bundle);
         changeFragment(questionFragment, QuestionFragment.class.getName());
+    }
+
+    @Override
+    public void kickUser() {
+        sendMessage("kickUser");
     }
 
     @Override

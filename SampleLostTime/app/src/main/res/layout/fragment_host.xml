@@ -59,6 +59,7 @@
             android:textColor="@android:color/white" />
 
         <Button
+            android:id="@+id/btnKickUser"
             android:layout_width="wrap_content"
             android:layout_height="35dp"
             android:background="@android:color/white"

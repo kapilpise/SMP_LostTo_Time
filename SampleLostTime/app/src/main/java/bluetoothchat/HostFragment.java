@@ -18,7 +18,7 @@ import com.example.android.bluetoothchat.R;
 
 public class HostFragment extends Fragment {
 
-    Button btnStartGame;
+    Button btnStartGame,btnKickUser;
     TextView tvName, tvJoinName;
     LinearLayout llJoin;
     IHostStartGame iHostStartGame;
@@ -28,6 +28,7 @@ public class HostFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_host, container, false);
         iHostStartGame= (IHostStartGame) getActivity();
         btnStartGame = (Button) view.findViewById(R.id.btnStartGame);
+        btnKickUser = (Button) view.findViewById(R.id.btnKickUser);
         tvName = (TextView) view.findViewById(R.id.tvName);
         tvJoinName = (TextView) view.findViewById(R.id.tvJoinName);
         llJoin = (LinearLayout) view.findViewById(R.id.llJoin);
@@ -37,6 +38,12 @@ public class HostFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 iHostStartGame.startGame();
+            }
+        });
+        btnKickUser.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                iHostStartGame.kickUser();
             }
         });
 
@@ -50,5 +57,6 @@ public class HostFragment extends Fragment {
 
     interface IHostStartGame{
         void startGame();
+        void kickUser();
     }
 }
