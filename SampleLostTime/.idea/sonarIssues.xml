@@ -8,32 +8,12 @@
             <set />
           </value>
         </entry>
-        <entry key="$USER_HOME$/Downloads/nearby-chat-master/app/build.gradle">
+        <entry key="$PROJECT_DIR$/app/build.gradle">
           <value>
             <set />
           </value>
         </entry>
-        <entry key="$USER_HOME$/Downloads/nearby-chat-master/app/build/intermediates/manifests/full/debug/AndroidManifest.xml">
-          <value>
-            <set />
-          </value>
-        </entry>
-        <entry key="$USER_HOME$/Downloads/nearby-chat-master/app/src/main/AndroidManifest.xml">
-          <value>
-            <set />
-          </value>
-        </entry>
-        <entry key="$PROJECT_DIR$/app/src/main/AndroidManifest.xml">
-          <value>
-            <set />
-          </value>
-        </entry>
-        <entry key="$PROJECT_DIR$/app/src/main/java/bluetoothchat/BluetoothChatService.java">
-          <value>
-            <set />
-          </value>
-        </entry>
-        <entry key="$PROJECT_DIR$/app/src/main/java/bluetoothchat/DeviceListActivity.java">
+        <entry key="$PROJECT_DIR$/app/src/main/java/bluetoothchat/HostFragment.java">
           <value>
             <set />
           </value>
@@ -43,7 +23,12 @@
             <set />
           </value>
         </entry>
-        <entry key="$PROJECT_DIR$/app/src/main/java/bluetoothchat/QuestionFragment.java">
+        <entry key="$PROJECT_DIR$/app/src/main/res/layout/dialog_host.xml">
+          <value>
+            <set />
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/res/layout/fragment_host.xml">
           <value>
             <set />
           </value>
